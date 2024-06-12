@@ -1,0 +1,6 @@
+#include "stdio.h"
+#include "malloc.h"
+#include "pico/error.h"
+#include "pico/stdlib.h"
+#include "hardware/timer.h"
+#include "hardware/i2c.h"
