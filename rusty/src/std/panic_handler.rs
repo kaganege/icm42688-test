@@ -5,7 +5,7 @@ use core::time::Duration;
 
 #[panic_handler]
 fn panic(panic_info: &PanicInfo) -> ! {
-  cortex_m::interrupt::disable();
+  // cortex_m::interrupt::disable();
 
   loop {
     eprintln!("{}", panic_info.to_string().as_str());

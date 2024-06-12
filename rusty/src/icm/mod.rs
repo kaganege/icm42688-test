@@ -1,4 +1,4 @@
-// #![allow(unused)]
+#![allow(unused)]
 
 use crate::i2c::{self, I2C};
 use crate::std::{thread, time::Duration};
@@ -10,6 +10,7 @@ pub use accelerometer::{
 use config::*;
 use core::f32::consts::PI;
 use core::fmt;
+use core::ptr::addr_of_mut;
 use error::*;
 use register::*;
 
@@ -40,7 +41,7 @@ pub struct ICM42688 {
 impl Default for ICM42688 {
   fn default() -> Self {
     Self {
-      i2c: I2C::new(unsafe { crate::i2c0_inst }),
+      i2c: I2C::new(unsafe { addr_of_mut!(crate::i2c0_inst) }),
       address: Default::default(),
       ready: false,
     }
@@ -59,24 +60,29 @@ impl ICM42688 {
   }
 
   pub fn init(&mut self) -> Result<(), i2c::Error> {
+    self.ready = true;
+
     if Self::DEVICE_ID != self.device_id()? {
       return Err(Error::SensorError(SensorError::BadChip));
     }
+    debug!("Passed device id control");
 
     self.soft_reset()?;
+    debug!("Soft reset");
 
     thread::sleep_ms(1);
 
     // Make sure that any configuration has been restored to the default values when
     // initializing the driver.
     self.set_accel_range(AccelRange::default())?;
+    debug!("set_accel_range");
     self.set_gyro_range(GyroRange::default())?;
+    debug!("set_gyro_range");
 
     // The IMU uses `PowerMode::Sleep` by default, which disables both the accel and
     // gyro, so we enable them both during driver initialization.
     self.set_power_mode(PowerMode::SixAxisLowNoise)?;
-
-    self.ready = true;
+    debug!("set_power_mode");
 
     Ok(())
   }
@@ -312,7 +318,7 @@ impl ICM42688 {
     } else {
       let data: [u8; 1] = self
         .i2c
-        .write_read(self.address as _, &[reg.addr()])
+        .write_read_timeout(self.address as _, &[reg.addr()], Duration::from_secs(5))
         .map_err(|err| Error::BusError(err))?;
 
       Ok(data[0])

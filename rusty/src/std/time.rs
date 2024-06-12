@@ -1,8 +1,21 @@
 #![allow(unused)]
 
+pub use crate::absolute_time_t as AbsoluteTime;
 use core::fmt;
 use core::ops::{Add, AddAssign, Sub, SubAssign};
 pub use core::time::*;
+
+pub trait ToAbsoluteTime {
+  fn to_absolute_time(&self) -> AbsoluteTime;
+}
+
+impl ToAbsoluteTime for Duration {
+  fn to_absolute_time(&self) -> AbsoluteTime {
+    AbsoluteTime {
+      _private_us_since_boot: self.min(&Duration::from_micros(u64::MAX)).as_micros() as _,
+    }
+  }
+}
 
 pub struct Instant(Duration);
 
@@ -66,6 +79,12 @@ impl Sub<Instant> for Instant {
 
   fn sub(self, other: Instant) -> Duration {
     self.duration_since(other)
+  }
+}
+
+impl ToAbsoluteTime for Instant {
+  fn to_absolute_time(&self) -> AbsoluteTime {
+    self.0.to_absolute_time()
   }
 }
 
