@@ -93,7 +93,7 @@ pub unsafe fn gpio_pull_down(gpio: u32) {
   gpio_set_pulls(gpio, false, true)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Pin(u32);
 impl Pin {
   pub fn new(gpio: u32) -> Self {

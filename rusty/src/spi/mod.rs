@@ -33,7 +33,7 @@ pub enum Instance {
 #[derive(Debug)]
 pub struct SPI {
   spi: *mut spi_inst,
-  cs: gpio::Pin,
+  cs: Option<gpio::Pin>,
   initialized: bool,
 }
 
@@ -42,7 +42,7 @@ impl Default for SPI {
   fn default() -> Self {
     Self {
       spi: defines::SPI0_PTR,
-      cs: gpio::Pin::new_init(PICO_DEFAULT_SPI_CSN_PIN),
+      cs: None,
       initialized: Default::default(),
     }
   }
@@ -51,7 +51,7 @@ impl Default for SPI {
 #[allow(unused)]
 impl SPI {
   #[must_use]
-  pub fn new(spi: Instance, cs_pin: gpio::Pin) -> Self {
+  pub fn new(spi: Instance) -> Self {
     use Instance::*;
 
     let spi = match spi {
@@ -61,7 +61,21 @@ impl SPI {
 
     Self {
       spi,
-      cs: cs_pin,
+      ..Default::default()
+    }
+  }
+
+  pub fn with_chip_select(spi: Instance, cs_pin: gpio::Pin) -> Self {
+    use Instance::*;
+
+    let spi = match spi {
+      SPI0 => defines::SPI0_PTR,
+      SPI1 => defines::SPI1_PTR,
+    };
+
+    Self {
+      spi,
+      cs: Some(cs_pin),
       ..Default::default()
     }
   }
@@ -71,8 +85,10 @@ impl SPI {
   /// Puts the SPI into a known state, and enable it.
   /// Must be called before other functions.
   pub fn init(&mut self, baudrate: u32) -> u32 {
-    self.cs.set_direction(gpio::Direction::OUT);
-    self.cs.put(true);
+    if let Some(ref cs) = self.cs {
+      cs.set_direction(gpio::Direction::OUT);
+      cs.put(true);
+    }
 
     self.initialized = true;
     unsafe { spi_init(self.spi, baudrate) }
@@ -89,12 +105,14 @@ impl SPI {
   }
 
   fn cs_select(&self) {
-    if self.cs.get() {
+    if self.cs.and_then(|cs| Some(cs.get())).unwrap_or_default() {
       for _ in 0..3 {
         nop();
       }
 
-      self.cs.put(false);
+      if let Some(ref cs) = self.cs {
+        cs.put(false);
+      }
 
       for _ in 0..3 {
         nop();
@@ -103,12 +121,14 @@ impl SPI {
   }
 
   fn cs_deselect(&self) {
-    if !self.cs.get() {
+    if !self.cs.and_then(|cs| Some(cs.get())).unwrap_or_default() {
       for _ in 0..3 {
         nop();
       }
 
-      self.cs.put(true);
+      if let Some(ref cs) = self.cs {
+        cs.put(true);
+      }
 
       for _ in 0..3 {
         nop();

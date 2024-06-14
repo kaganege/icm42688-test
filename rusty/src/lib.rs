@@ -25,18 +25,22 @@ fn main() {
   unsafe {
     // gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
     // gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
+    // gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
+    // gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
     gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
     gpio_set_function(PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI);
     gpio_set_function(PICO_DEFAULT_SPI_TX_PIN, GPIO_FUNC_SPI);
-    // gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
-    // gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
+    gpio_set_function(PICO_DEFAULT_SPI_CSN_PIN, GPIO_FUNC_SPI);
   };
+
+  thread::sleep_ms(10_000);
 
   // let i2c = I2C::new(unsafe { addr_of_mut!(i2c0_inst) });
   // i2c.init(600_000);
   // i2c.init(100_000);
 
-  let mut spi = SPI::new(Default::default(), Pin::new_init(5));
+  let mut spi = SPI::default();
+  // let mut spi = SPI::with_chip_select(Default::default(), gpio::Pin::new_init(PICO_DEFAULT_SPI_CSN_PIN));
   spi.init(1_000_000);
 
   // let mut icm = ICM42688::with_i2c(i2c, icm::Address::Primary);

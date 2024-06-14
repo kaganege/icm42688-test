@@ -78,7 +78,7 @@ impl ICM42688 {
   pub fn init(&mut self) -> Result<()> {
     self.ready = true;
 
-    if Self::DEVICE_ID != self.device_id()? {
+    if dbg!(Self::DEVICE_ID) != dbg!(self.device_id()?) {
       return Err(Error::SensorError(SensorError::BadChip));
     }
     debug!("Passed device id control");
