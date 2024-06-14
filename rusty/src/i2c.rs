@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 use alloc::vec::Vec;
 
 use crate::error;
@@ -8,8 +6,8 @@ use crate::{
   i2c_deinit, i2c_init, i2c_inst, i2c_read_blocking, i2c_read_blocking_until, i2c_write_blocking,
   i2c_write_blocking_until,
 };
-use core::ptr::addr_of_mut;
 
+#[allow(unused)]
 #[derive(Debug, PartialEq, Eq)]
 pub enum Error {
   AddressNotAcknowledged,
@@ -22,6 +20,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 pub struct I2C(*mut i2c_inst);
 
+#[allow(unused)]
 impl I2C {
   pub fn new(i2c: *mut i2c_inst) -> Self {
     Self(i2c)
@@ -42,7 +41,7 @@ impl I2C {
       i2c_read_blocking_until(
         self.0,
         address,
-        &mut dst as _,
+        dst.as_mut_ptr(),
         N,
         !stop,
         (Instant::now() + timeout).to_absolute_time(),
@@ -61,7 +60,7 @@ impl I2C {
 
   pub fn read<const N: usize>(&self, address: u8, stop: bool) -> Result<[u8; N]> {
     let mut dst: [u8; N] = [0x00; N];
-    let bytes = unsafe { i2c_read_blocking(self.0, address, &mut dst as _, N, !stop) };
+    let bytes = unsafe { i2c_read_blocking(self.0, address, dst.as_mut_ptr(), N, !stop) };
 
     if bytes == error::PicoErrorCodes::GENERIC as _ {
       return Err(Error::Both);
@@ -81,7 +80,7 @@ impl I2C {
       i2c_write_blocking_until(
         self.0,
         address,
-        src as _,
+        src.as_ptr(),
         N,
         !stop,
         (Instant::now() + timeout).to_absolute_time(),
@@ -99,7 +98,7 @@ impl I2C {
   }
 
   pub fn write<const N: usize>(&self, address: u8, src: &[u8; N], stop: bool) -> Result<()> {
-    let bytes = unsafe { i2c_write_blocking(self.0, address, src as _, N, !stop) };
+    let bytes = unsafe { i2c_write_blocking(self.0, address, src.as_ptr(), N, !stop) };
 
     if bytes == error::PicoErrorCodes::GENERIC as _ {
       Err(Error::Both)
@@ -161,4 +160,49 @@ impl Drop for I2C {
 
 fn reserved_addr(addr: u8) -> bool {
   return (addr & 0x78) == 0 || (addr & 0x78) == 0x78;
+}
+
+pub struct Device {
+  i2c: I2C,
+  address: u8,
+}
+
+#[allow(unused)]
+impl Device {
+  pub fn new(i2c: I2C, address: u8) -> Self {
+    Self { i2c, address }
+  }
+
+  pub fn read_timeout<const N: usize>(&self, timeout: Duration, stop: bool) -> Result<[u8; N]> {
+    self.i2c.read_timeout(self.address, timeout, stop)
+  }
+
+  pub fn read<const N: usize>(&self, stop: bool) -> Result<[u8; N]> {
+    self.i2c.read(self.address, stop)
+  }
+
+  pub fn write_timeout<const N: usize>(
+    &self,
+    src: &[u8; N],
+    timeout: Duration,
+    stop: bool,
+  ) -> Result<()> {
+    self.i2c.write_timeout(self.address, src, timeout, stop)
+  }
+
+  pub fn write<const N: usize>(&self, src: &[u8; N], stop: bool) -> Result<()> {
+    self.i2c.write(self.address, src, stop)
+  }
+
+  pub fn write_read_timeout<const N: usize, const M: usize>(
+    &self,
+    src: &[u8; N],
+    timeout: Duration,
+  ) -> Result<[u8; M]> {
+    self.i2c.write_read_timeout(self.address, src, timeout)
+  }
+
+  pub fn write_read<const N: usize, const M: usize>(&self, src: &[u8; N]) -> Result<[u8; M]> {
+    self.i2c.write_read(self.address, src)
+  }
 }

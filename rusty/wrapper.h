@@ -4,3 +4,5 @@
 #include "pico/stdlib.h"
 #include "hardware/timer.h"
 #include "hardware/i2c.h"
+#include "hardware/spi.h"
+#include "hardware/gpio.h"

@@ -1,12 +1,20 @@
-#![allow(unused)]
+// #![allow(unused)]
+
+use crate::{i2c, spi};
+
+#[derive(Debug)]
+pub enum BusError {
+  I2C(i2c::Error),
+  SPI(spi::Error),
+}
 
 /// Any type of error which may occur while interacting with the device
 #[derive(Debug)]
-pub enum Error<E> {
+pub enum Error {
   /// The sensor is not ready
   NotReady,
   /// Some error originating from the communication bus
-  BusError(E),
+  BusError(BusError),
   /// Some error resulting from interacting with the device
   SensorError(SensorError),
 }
@@ -31,7 +39,7 @@ pub enum SensorError {
   InvalidDiscriminant,
 }
 
-impl<E> From<SensorError> for Error<E> {
+impl From<SensorError> for Error {
   fn from(err: SensorError) -> Self {
     Error::SensorError(err)
   }

@@ -1,6 +1,5 @@
-#![allow(unused)]
-
 /// Common return codes from pico_sdk methods that return a status
+#[allow(unused)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PicoErrorCodes {
   NONE = 0,

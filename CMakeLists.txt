@@ -98,6 +98,7 @@ target_link_libraries(icm42688-test
   pico_cyw43_arch_none
   hardware_timer
   hardware_i2c
+  hardware_spi
   ${LIB_FILE}
 )
 

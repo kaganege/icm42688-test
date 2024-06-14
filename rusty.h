@@ -12,6 +12,10 @@
 
 constexpr static const uint32_t MAX_I2C_FREQ = 1000000;
 
+constexpr static const uint32_t SPI0_BASE = 1073987584;
+
+constexpr static const uint32_t SPI1_BASE = 1074003968;
+
 extern "C" {
 
 int main();
